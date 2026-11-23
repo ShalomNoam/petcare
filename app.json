@@ -1,18 +1,18 @@
 {
   "expo": {
-    "name": "pet-file",
+    "name": "תיק חיה",
     "slug": "pet-file",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "petfile",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "ios": {
       "icon": "./assets/expo.icon"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0D5C55",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -20,7 +20,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "output": "server",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -28,15 +28,44 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#0D5C55",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      [
+        "expo-localization",
+        {
+          "forcesRTL": true,
+          "supportedLocales": {
+            "ios": [
+              "he"
+            ],
+            "android": [
+              "he"
+            ]
+          }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "האפליקציה צריכה גישה לתמונות כדי לצרף תמונה של החיה או מסמך מהמרפאה.",
+          "cameraPermission": "האפליקציה צריכה גישה למצלמה כדי לצלם את החיה ומסמכים מהמרפאה."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0D5C55"
+        }
+      ],
+      "expo-document-picker"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "backgroundColor": "#EEF5F2"
   }
 }

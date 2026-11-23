@@ -1,56 +1,76 @@
-# Welcome to your Expo app 👋
+# תיק חיה – אפליקציה לתיק רפואי של חיות מחמד (שלב 1)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo (React Native) + TypeScript + Expo Router · Supabase (Auth בטלפון, Postgres, Storage, Edge Functions) · Claude API.
+עברית בלבד, RTL מלא. שלב 1 לבעלים בלבד.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## להריץ עכשיו, בלי חיבורים (מצב הדגמה)
 
 ```bash
-npm run reset-project
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+פותחים ב-Expo Go בטלפון ובוחרים **"כניסה למצב הדגמה"**: שתי חיות לדוגמה, הכול נשמר רק בטלפון, וה-AI מחזיר תשובות לדוגמה.
 
-### Other setup steps
+> ב-Expo Go כיוון המסך נקבע לפי שפת הטלפון. כשהטלפון בעברית, הכול מימין לשמאל. ב-development build ובגרסה לחנויות ה-RTL כפוי תמיד (`expo-localization` ב-`app.json`).
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## חיבור לשירותים (פעם אחת)
 
-## Learn more
+### 1. Supabase
+1. יוצרים פרויקט ב-supabase.com (אזור Frankfurt).
+2. **Authentication → Sign In / Providers → Phone**: מפעילים. לפיתוח מוסיפים ב-Test OTPs את `972500000001=123456` (אין צורך ב-SMS אמיתי). לפני משתמשים אמיתיים מחברים ספק SMS (למשל Twilio Verify).
+3. מעתיקים `.env.example` ל-`.env` וממלאים מ-**Project Settings → API**:
+   - `EXPO_PUBLIC_SUPABASE_URL`
+   - `EXPO_PUBLIC_SUPABASE_KEY` (ה-publishable key או ה-anon key)
+4. מעלים את הסכמה ואת הפונקציות:
+   ```bash
+   supabase login
+   supabase link --project-ref <PROJECT_REF>
+   supabase db push
+   npm run functions:deploy
+   ```
 
-To learn more about developing your project with Expo, look at the following resources:
+### 2. Anthropic (Claude)
+המפתח **לא** נכנס לאפליקציה. הוא נשמר כסוד של Supabase, ורק ה-Edge Functions משתמשות בו:
+```bash
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+```
+המודל מוגדר במקום אחד: `supabase/functions/_shared/claude.ts` (`MODEL`).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## בדיקות
 
-## Join the community
+| פקודה | מה בודקת | עולה כסף? |
+|---|---|---|
+| `npm test` | נרמול טלפון, ת"ז, תאריכים וגיל | לא |
+| `npm run test:db` | RLS: משתמש לא רואה ולא משנה מידע של אחר, Storage, מחיקת חשבון | לא |
+| `npm run test:agent` | כללי הבטיחות של הסוכן (סימני חירום, מינונים, הבהרה) | לא |
+| `ANTHROPIC_API_KEY=... npm run test:agent:live` | תרחישים מול Claude: הרעלה, קושי בנשימה, הקאה חד-פעמית, גירוד, מינונים, אבחנה | כן, סנטים בודדים לריצה |
 
-Join our community of developers creating universal apps.
+## סוכן ההתייעצות
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- ההנחיות לסוכן: **`supabase/functions/vet-chat/system-prompt.md`**, קובץ קריא לעריכה ולבדיקה מול וטרינר. אחרי עריכה מריצים `npm run build:prompt`.
+- מעבר להנחיות, יש שכבת בטיחות בקוד (`supabase/functions/_shared/safety.ts`): סימן חירום תמיד מקבל "דחוף", המלצה על מינון מוחלפת, והבהרה שהסוכן לא תחליף לווטרינר מתווספת תמיד.
+- את ההודעות כותב רק השרת, ולכן רמת הדחיפות שמוצגת באפליקציה תמיד מגיעה ממנו.
+
+## מבנה
+
+```
+src/app/            מסכים (Expo Router)
+  (auth)/           טלפון + קוד SMS
+  welcome.tsx       שם ות"ז (רשות)
+  (app)/            בית, תיק חיה, טפסים, מסמכים, אישור AI, תזכורות, הצגה לווטרינר, צ'אט, הגדרות
+src/components/     קומפוננטות משותפות (Button, Card, Pill, SectionHeader, HeroHeader...)
+src/theme/          כל הצבעים, הגדלים והטיפוגרפיה
+src/data/           שכבת נתונים: Supabase או הדגמה (אותו ממשק)
+src/features/       טפסים, חילוץ מסמכים, טיוטת אישור
+src/lib/            auth, התראות, פורמט תאריכים, תוויות בעברית
+supabase/migrations סכמה + RLS + Storage
+supabase/functions/ extract-document · vet-chat · delete-account
+```
+
+## לפני השקה
+
+- עורך דין לפרטיות: חוק הגנת הפרטיות (תיקון 13) וניסוח תנאי השימוש (`src/app/(app)/terms.tsx` הוא טיוטה).
+- בדיקת `system-prompt.md` ותרחישי הסוכן מול וטרינר.
+- ספק SMS אמיתי ב-Supabase.
+- אייקון ומסך פתיחה של המותג (כרגע ברירת המחדל של Expo).
